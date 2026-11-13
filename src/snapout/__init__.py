@@ -1,19 +1,6 @@
-"""
-__init__.py
-SnapOut Python backend package.
-"""
+"""SnapOut: clean up old Snap package revisions."""
 
-from .application import CoreSnapOperations, SnapoutApplication
-from .core import active_snap_rows, old_snap_rows, remove_package, remove_revision, snap_rows
-from .ui import ConsoleUI
+from .models import Revision
+from .snapd import Snapd
 
-__all__ = [
-    "snap_rows",
-    "active_snap_rows",
-    "old_snap_rows",
-    "remove_package",
-    "remove_revision",
-    "ConsoleUI",
-    "CoreSnapOperations",
-    "SnapoutApplication",
-]
+__all__ = ["Revision", "Snapd"]

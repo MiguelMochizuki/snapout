@@ -1,134 +1,44 @@
-"""
-cli.py
-CLI parsing for SnapOut actions.
-"""
+"""Argument parsing for the `snapout` command."""
 
 from __future__ import annotations
 
 import argparse
-import sys
-from typing import Any
 
 
-# Command descriptions for help text
-COMMAND_INFO = {
-    "scan-all": {
-        "help": "Scan all Snap packages (active and old)",
-        "description": "Display a complete list of all Snap packages installed on the system, showing both active packages and old disabled versions.",
-        "epilog": "This is a read-only operation. No changes are made to the system.",
-    },
-    "scan-active": {
-        "help": "Scan only active Snap packages",
-        "description": "Display only the currently active Snap packages installed on the system.",
-        "epilog": "This is a read-only operation. No changes are made to the system.",
-    },
-    "scan-old": {
-        "help": "Scan only old Snap versions",
-        "description": "Display old/disabled Snap versions that are candidates for cleanup. These are previous revisions kept by Snap for rollback purposes.",
-        "epilog": "This is a read-only operation. No changes are made to the system.",
-    },
-    "select-all": {
-        "help": "Select from all packages to remove",
-        "description": "Interactively select specific packages (both active and old) to remove from the system.",
-        "epilog": "You will be prompted to confirm before any packages are removed.",
-    },
-    "select-active": {
-        "help": "Select from active packages to remove",
-        "description": "Interactively select specific active packages to remove from the system.",
-        "epilog": "Warning: Removing active packages will uninstall the application. You will be prompted to confirm.",
-    },
-    "select-old": {
-        "help": "Select from old versions to remove",
-        "description": "Interactively select specific old/disabled versions to remove and free up disk space.",
-        "epilog": "Safe operation - only removes old versions, not active packages.",
-    },
-    "purge-all": {
-        "help": "Remove ALL Snap packages",
-        "description": "Remove every Snap package from the system - both active and old versions.",
-        "epilog": "DANGER: This will remove ALL Snap packages. Use with extreme caution!",
-    },
-    "purge-active": {
-        "help": "Remove ALL active Snap packages",
-        "description": "Remove all currently active Snap packages from the system.",
-        "epilog": "WARNING: This will uninstall all active Snap applications!",
-    },
-    "purge-old": {
-        "help": "Remove ALL old Snap versions",
-        "description": "Remove all old/disabled Snap versions to free up disk space.",
-        "epilog": "Safe cleanup operation - only removes old versions, keeping active packages intact.",
-    },
-}
-
-
-class CustomArgumentParser(argparse.ArgumentParser):
-    """Custom parser to handle subcommand help properly."""
-
-    def error(self, message: str) -> None:
-        """Override error to show help when invalid command is given."""
-        sys.stderr.write(f"Error: {message}\n\n")
-        self.print_help()
-        sys.exit(2)
+def _add_common(parser: argparse.ArgumentParser, *, root: bool, dry_run: bool = True) -> None:
+    # Subparsers use SUPPRESS so they do not overwrite flags given before the subcommand.
+    default = False if root else argparse.SUPPRESS
+    if dry_run:
+        parser.add_argument(
+            "-n",
+            "--dry-run",
+            action="store_true",
+            default=default,
+            help="show the commands without running them",
+        )
+    parser.add_argument(
+        "--no-color", action="store_true", default=default, help="disable ANSI colors"
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = CustomArgumentParser(
+    """Build the `snapout` parser with its `list` and `clean` subcommands."""
+    parser = argparse.ArgumentParser(
         prog="snapout",
-        description="SnapOut! - Snap Package Cleanup Tool",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="Clean up old Snap revisions. Without a command, pick revisions interactively.",
     )
+    _add_common(parser, root=True)
+    sub = parser.add_subparsers(dest="command", metavar="COMMAND")
 
-    # Global options
-    parser.add_argument(
-        "-n", "--dry-run",
-        action="store_true",
-        help="Show commands without executing (applies to remove/purge operations)"
-    )
-    parser.add_argument(
-        "--no-color",
-        action="store_true",
-        help="Disable ANSI colors in terminal output"
-    )
+    ls = sub.add_parser("list", help="show snaps (old revisions by default)")
+    _add_common(ls, root=False, dry_run=False)
+    scope = ls.add_mutually_exclusive_group()
+    for name in ("old", "active", "all"):
+        scope.add_argument(f"--{name}", dest="scope", action="store_const", const=name)
+    ls.set_defaults(scope="old")
 
-    # Create subparsers for commands
-    subparsers = parser.add_subparsers(
-        title="commands",
-        dest="command",
-        metavar="COMMAND",
-        help="Command to execute (omit for interactive mode)"
-    )
-
-    # Add each command as a subparser with its specific help
-    for cmd, info in COMMAND_INFO.items():
-        subparser = subparsers.add_parser(
-            cmd,
-            help=info["help"],
-            description=info["description"],
-            epilog=info["epilog"],
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-        # Each subparser inherits the global options
-        subparser.add_argument(
-            "-n", "--dry-run",
-            action="store_true",
-            help=argparse.SUPPRESS  # Hide from subcommand help (shown in global)
-        )
-        subparser.add_argument(
-            "--no-color",
-            action="store_true",
-            help=argparse.SUPPRESS  # Hide from subcommand help
-        )
-
+    clean = sub.add_parser("clean", help="remove old revisions")
+    _add_common(clean, root=False)
+    clean.add_argument("--select", action="store_true", help="choose which revisions to remove")
+    clean.add_argument("-y", "--yes", action="store_true", help="do not ask for confirmation")
     return parser
-
-
-def print_command_help(command: str) -> None:
-    """Print detailed help for a specific command."""
-    if command in COMMAND_INFO:
-        info = COMMAND_INFO[command]
-        print(f"\nCommand: snapout {command}")
-        print("=" * 50)
-        print(f"\n{info['description']}\n")
-        if info['epilog']:
-            print(f"Note: {info['epilog']}\n")
-    else:
-        print(f"Unknown command: {command}")
