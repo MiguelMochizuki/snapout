@@ -78,7 +78,7 @@ def test_clean_continues_after_failure_and_reports(capsys):
     ops = FakeOps(fail={"4793"})
     assert clean_command(ops, STYLE, select=False, dry_run=False, yes=True) == 1
     assert len(ops.removed) == 2
-    assert "Failed: firefox rev 4793" in capsys.readouterr().err
+    assert "failed: firefox rev 4793" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize("argv", [["-n", "clean"], ["clean", "-n"]])

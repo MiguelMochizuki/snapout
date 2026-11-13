@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from dataclasses import replace
 from pathlib import Path
 
@@ -54,16 +55,21 @@ def _sudo(args: list[str]) -> list[str]:
     return args if os.geteuid() == 0 else ["sudo", *args]
 
 
-def _run(args: list[str], dry_run: bool) -> int:
+def _run(args: list[str], dry_run: bool, verbose: bool = False) -> int:
     cmd = _sudo(args)
     if dry_run:
         print(f"[DRY RUN] {' '.join(cmd)}")
         return 0
+    if verbose:
+        print(f"+ {' '.join(cmd)}", file=sys.stderr)
     return subprocess.run(cmd, check=False).returncode
 
 
 class Snapd:
     """Real implementation of `commands.SnapOperations`."""
+
+    def __init__(self, verbose: bool = False) -> None:
+        self.verbose = verbose
 
     def all_rows(self) -> list[Revision]:
         """List every installed revision; old ones carry their size on disk."""
@@ -86,7 +92,7 @@ class Snapd:
         Returns:
             The exit code of the command; 0 in dry-run.
         """
-        return _run(["snap", "remove", "--revision", revision, name], dry_run)
+        return _run(["snap", "remove", "--revision", revision, name], dry_run, self.verbose)
 
     def detach_stale_loops(self) -> int:
         """Detach loop devices left behind by removed snap files; returns how many."""
@@ -96,4 +102,4 @@ class Snapd:
             text=True,
             check=False,
         ).stdout
-        return sum(_run(["losetup", "-d", d], False) == 0 for d in stale_loops(out))
+        return sum(_run(["losetup", "-d", d], False, self.verbose) == 0 for d in stale_loops(out))

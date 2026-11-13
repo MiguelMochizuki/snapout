@@ -22,18 +22,19 @@ def main(argv: list[str] | None = None) -> int:
     """
     args = build_parser().parse_args(argv)
     if shutil.which("snap") is None:
-        print("Error: snap command not found", file=sys.stderr)
+        print("snapout: snap command not found", file=sys.stderr)
         return 1
 
-    ops, style = Snapd(), Style(color_enabled(args.no_color))
+    ops, style = Snapd(args.verbose), Style(color_enabled(args.no_color))
     if args.command == "list":
-        return list_command(ops, style, args.scope)
+        return list_command(ops, style, args.scope, quiet=args.quiet)
     return clean_command(
         ops,
         style,
         select=args.command is None or args.select,
         dry_run=args.dry_run,
         yes=getattr(args, "yes", False),
+        quiet=args.quiet,
     )
 
 

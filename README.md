@@ -96,7 +96,12 @@ If a removal fails, SnapOut keeps going, lists the failures at the end and exits
 | `-y`, `--yes` | `clean` | Skip the confirmation prompt |
 | `--select` | `clean` | Choose which revisions to remove |
 | `--old`, `--active`, `--all` | `list` | Pick what to list |
+| `-q`, `--quiet` | all | Print only errors and data: no summary, no `✓` lines (the `list` table stays) |
+| `-v`, `--verbose` | all | Print each command to stderr before running it |
 | `--no-color` | all | Disable colors (`NO_COLOR` also works) |
+| `-V`, `--version` | | Show the version and exit |
+
+Exit status: 0 on success, 1 on a runtime error (a removal failed, `snap` is missing, no terminal for the checklist), 2 on invalid usage. Error messages go to stderr as `snapout: message`.
 
 ### Tests
 
