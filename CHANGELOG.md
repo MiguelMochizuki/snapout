@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.4.0] - 2026-11-13
+
+### Added
+
+- `-q`/`--quiet` prints only errors and data: no summary, no `✓` lines.
+- `-v`/`--verbose` prints each command to stderr before running it.
+- `-V`/`--version`.
+- `--help` ends with `Exit codes` and `Examples` sections.
+
+### Changed
+
+- Error messages on stderr are prefixed with `snapout:`, as in `snapout: snap command not found`.
+
 ## [0.3.0] - 2026-11-13
 
 ### Added
