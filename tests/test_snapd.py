@@ -29,3 +29,14 @@ def test_disabled_is_detected_among_comma_separated_notes():
     )
     assert rows[0].is_old
     assert not Revision("core22", "1", "3", "base").is_old
+
+
+def test_stale_loops_picks_only_deleted_snap_files():
+    from snapout.snapd import stale_loops
+
+    out = (
+        "/dev/loop4 /var/lib/snapd/snaps/core24_2124.snap (deleted)\n"
+        "/dev/loop0 /var/lib/snapd/snaps/core24_2307.snap\n"
+        "/dev/loop9 /tmp/other.img (deleted)\n"
+    )
+    assert stale_loops(out) == ["/dev/loop4"]

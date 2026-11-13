@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+
+- After a real `clean`, SnapOut detaches loop devices still backed by a deleted snap file, which GNOME showed as a stray volume. Loops still mounted by running snap apps stay until those restart.
+
 ## [0.2.0] - 2026-11-13
 
 ### Changed

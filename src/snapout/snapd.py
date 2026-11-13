@@ -31,6 +31,18 @@ def parse_snap_list(output: str) -> list[Revision]:
     return rows
 
 
+def stale_loops(output: str) -> list[str]:
+    """Pick loop devices still backed by a deleted snap file from `losetup -l -n` output."""
+    prefix = f"{SNAP_DIR}/"
+    return [
+        parts[0]
+        for line in output.splitlines()
+        if len(parts := line.split()) >= 3
+        and parts[-1] == "(deleted)"
+        and parts[-2].startswith(prefix)
+    ]
+
+
 def _file_size(name: str, revision: str) -> int:
     try:
         return (SNAP_DIR / f"{name}_{revision}.snap").stat().st_size
@@ -75,3 +87,13 @@ class Snapd:
             The exit code of the command; 0 in dry-run.
         """
         return _run(["snap", "remove", "--revision", revision, name], dry_run)
+
+    def detach_stale_loops(self) -> int:
+        """Detach loop devices left behind by removed snap files; returns how many."""
+        out = subprocess.run(
+            ["losetup", "-l", "-n", "-O", "NAME,BACK-FILE"],
+            capture_output=True,
+            text=True,
+            check=False,
+        ).stdout
+        return sum(_run(["losetup", "-d", d], False) == 0 for d in stale_loops(out))

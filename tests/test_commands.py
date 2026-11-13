@@ -29,6 +29,9 @@ class FakeOps:
         self.removed.append((name, revision, dry_run))
         return 1 if revision in self.fail else 0
 
+    def detach_stale_loops(self) -> int:
+        return 0
+
 
 def test_list_old_prints_table_on_stdout_and_summary_on_stderr(capsys):
     assert list_command(FakeOps(), STYLE, "old") == 0

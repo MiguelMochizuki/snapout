@@ -17,6 +17,8 @@ class SnapOperations(Protocol):
 
     def remove_revision(self, name: str, revision: str, dry_run: bool) -> int: ...
 
+    def detach_stale_loops(self) -> int: ...
+
 
 def _show(revs: list[Revision], style: Style, with_state: bool) -> None:
     headers = ["NAME", "VERSION", "REV", "SIZE"] + (["STATE"] if with_state else [])
@@ -113,6 +115,12 @@ def clean_command(
         else:
             failed.append(r)
             print(f"{style.red('✗')} {label}")
+
+    if freed and not dry_run:
+        # snapd sometimes leaves the loop device of a removed revision behind (shows as a volume)
+        detached = ops.detach_stale_loops()
+        if detached:
+            print(f"Detached {detached} leftover loop device(s).")
 
     verb = "Would free" if dry_run else "Freed"
     print(f"{len(chosen) - len(failed)}/{len(chosen)} removed. {verb} {format_size(freed)}.")
